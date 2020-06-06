@@ -88,6 +88,7 @@
                                     <th scope="col">Menor</th>
                                     <th scope="col">Media</th>
                                     <th scope="col">Maior</th>
+                                    <th scope="col">Análise</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -95,6 +96,7 @@
                                     <td>{{menor}}</td>
                                     <td>{{media}}</td>
                                     <td>{{maior}}</td>
+                                    <td>{{{icon}}}</td>
                                 </tr>
                             </tbody>
                             </table>
