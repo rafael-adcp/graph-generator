@@ -5,11 +5,20 @@ const uuidv1 = require('uuid/v1');
 const argv = require('yargs').argv
 
 if (!argv.fileName) {
-    throw new Error('file name must be provided');
+    throw new Error('--fileName must be provided');
+}
+
+if (!argv.tabName) {
+    throw new Error('--tabName must be provided');
 }
 
 var workbook = XLSX.readFile(`./${argv.fileName}.xlsx`);
-const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+if(!workbook.SheetNames.includes(argv.tabName)) {
+    throw new Error(`excel file doesnt contains a tab named: "${argv.tabName}" available ones are "${workbook.SheetNames.join(", ")}"`)
+}
+
+const sheet = workbook.Sheets[argv.tabName];
 
 var range = XLSX.utils.decode_range(sheet['!ref']);
 
@@ -31,7 +40,7 @@ for (let rowNum = 9; rowNum <= range.e.r; rowNum++) {
         parsed[investimentName.v] = [];
 
         //3 means column D, which is where the values starts
-        for (var columnNum = 3; columnNum < maxColumn; columnNum++) {
+        for (var columnNum = 3; columnNum <= maxColumn; columnNum++) {
             const value = sheet[
                 XLSX.utils.encode_cell(
                     {
