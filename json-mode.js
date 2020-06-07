@@ -5,6 +5,12 @@ const uuidv1 = require('uuid/v1');
 const argv = require('yargs').argv
 const handlebars = require('handlebars');
 
+function getPercentual(value, totalAmount) {
+    return _.ceil(
+        (value / totalAmount) * 100, 2
+    );
+}
+
 const metrics = {
     total: 0,
     subiu: {
@@ -18,14 +24,28 @@ const metrics = {
     }
 };
 
+
+const inverterCoresIcones = argv.inverterCoresIcones ? true : false;
+
+let upClass = 'bg-success'
+
+let downClass = 'bg-danger';
+
+if (inverterCoresIcones) {
+    temp = upClass;
+
+    upClass = downClass; // moving trend up to RED
+    downClass = temp; // moving trend down to GREEN
+}
+
 const ICONS = {
-    subiu: `<div class = "bg-danger">subiu <br/>
+    subiu: `<div class = "${upClass}">subiu <br/>
     <svg class="bi bi-graph-up" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M0 0h1v16H0V0zm1 15h15v1H1v-1z"/>
     <path fill-rule="evenodd" d="M14.39 4.312L10.041 9.75 7 6.707l-3.646 3.647-.708-.708L7 5.293 9.959 8.25l3.65-4.563.781.624z"/>
     <path fill-rule="evenodd" d="M10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4h-3.5a.5.5 0 0 1-.5-.5z"/>
   </svg></div>`,
-    caiu: `<div class = "bg-success">caiu <br/>
+    caiu: `<div class = "${downClass}">caiu <br/>
     <svg class="bi bi-graph-down" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M0 0h1v16H0V0zm1 15h15v1H1v-1z"/>
     <path fill-rule="evenodd" d="M14.39 9.041l-4.349-5.436L7 6.646 3.354 3l-.708.707L7 8.061l2.959-2.959 3.65 4.564.781-.625z"/>
@@ -103,6 +123,10 @@ for (var item of jsonSheet) {
         data: JSON.stringify(
             _.concat(["Value"], data)
         ),
+        allInOnedata: JSON.stringify(
+            _.concat([item[firstRowAttributeName]], data)
+        ),
+        pureData: data,
         name: item[firstRowAttributeName],
         id: "graphic_" + uuidv1().replace(/\-/g, '_'),
         maior: _.max(data),
@@ -122,11 +146,11 @@ for (var item of jsonSheet) {
 }
 
 // set up your handlebars template
-var source = fs.readFileSync('template.hb').toString();
+var source = fs.readFileSync('graficos.hb').toString();
 
 // compile the template
 var template = handlebars.compile(source);
-
+handlebarData.monthYear = JSON.stringify(categorias, null, 2);
 fs.writeFileSync(
     `graph_parsed_from_${argv.fileName}_${uuidv1()}.html`,
     // call template as a function, passing in your data as the context
@@ -136,7 +160,99 @@ fs.writeFileSync(
 );
 
 var print = ['subiu', 'caiu', 'manteve'];
-console.log('Este mês:')
+var analiseAtual = "Cenário atual:";
+
 for (var x of print) {
-    console.log(`${x} => (${metrics[x].count} / ${metrics.total}) = ${_.ceil((metrics[x].count / metrics.total) * 100, 2)}%`)
+    analiseAtual += `<br/>${x} => (${metrics[x].count} / ${metrics.total}) = ${getPercentual(metrics[x].count, metrics.total)}%`
 }
+
+var tableContent = {
+    analiseAtual: analiseAtual,
+    data: []
+};
+
+for (var item of handlebarData.generated_graph) {
+    if (item.pureData.length > 1) { //meaning there is something to compare
+
+        let atual = 0;
+        let anterior = 0;
+        let i = 0;
+
+        let subiuCount = 0;
+        let caiuCount = 0;
+        let manteveCount = 0;
+
+        var iconList = [];
+        for (var info of item.pureData) {
+
+            anterior = atual;
+            atual = info;
+
+            if (i > 0) { //comparison start at the second element, where i = 1
+
+                if (atual > anterior) {
+                    subiuCount++;
+                    icon = ICONS.subiu
+                } else if (atual < anterior) {
+                    caiuCount++;
+                    icon = ICONS.caiu
+                } else {
+                    manteveCount++
+                    icon = ICONS.manteve
+                }
+                iconList.push(icon)
+            }
+            i++;
+        }
+        tableContent.data.push({
+            name: item.name,
+            icons: iconList,
+
+            subiuCount: getPercentual(subiuCount, item.pureData.length - 1),
+            caiuCount: getPercentual(caiuCount, item.pureData.length - 1),
+            manteveCount: getPercentual(manteveCount, item.pureData.length - 1),
+            totalCount: item.pureData.length,
+        })
+
+    }
+}
+
+
+tableContent.totalAnalises = [];
+
+let anterior, atual = null;
+
+for (var item of categorias) {
+    anterior = atual;
+    atual = item
+    if (anterior != null) {
+        tableContent.totalAnalises.push(`${anterior} => ${atual}`)
+    }
+}
+
+tableContent.data = _.reverse( //becuse we want thing to be ordered DESC instead of ASC
+    _.sortBy(tableContent.data, (o) => {
+        if (inverterCoresIcones) {//so that we know which one to handle first, following 80/20 principle
+            return o.subiuCount;
+        } else {
+            return o.caiuCount;
+        }
+    })
+)
+
+
+
+// set up your handlebars template
+var sourceTemplateAnalise = fs.readFileSync('analise.hb').toString();
+
+// compile the template
+var templateAnalise = handlebars.compile(sourceTemplateAnalise);
+
+
+fs.writeFileSync(
+    `analise_from_${argv.fileName}_${uuidv1()}.html`,
+    // call template as a function, passing in your data as the context
+    templateAnalise(
+        tableContent
+    )
+);

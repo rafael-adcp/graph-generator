@@ -70,7 +70,7 @@ for (let rowNum = 9; rowNum <= range.e.r; rowNum++) {
 const handlebars = require('handlebars');
 
 // set up your handlebars template
-var source = fs.readFileSync('template.hb').toString();
+var source = fs.readFileSync('graficos.hb').toString();
 
 // compile the template
 var template = handlebars.compile(source);

@@ -17,6 +17,72 @@
 
     <body>
         <div class="container-fluid">
+        <hr>
+        <div class="row">
+            <div class="col-md-12">
+             <div id="all-in-one"></div>
+                            <script>
+                                var chart = bb.generate({
+                                    data: {
+                                        columns: [
+                                             {{#each generated_graph}}
+                                            {{{ allInOnedata }}},
+                                            {{/each}}
+                                        ],
+                                        labels: true
+                                    },
+                                    "tooltip": {
+                                        "order": "desc"
+                                    },
+                                     zoom: {
+                                        enabled: {
+                                            type: "drag"
+                                        }
+                                    },
+                                    
+                                    axis : {
+                                        
+                                        x: {
+                                            label: {
+                                                text: 'date',
+                                            },
+                                            type: "category",
+                                            categories: {{{ monthYear }}} ,
+                                            tick: {
+                                                    fit: false, //makes x axis shows nicely,
+                                                },
+                                        },
+                                         y: {
+                                             label: {
+                                                text: 'value',
+                                            },
+                                        }
+                                    },
+                                
+
+                                    bindto: '#all-in-one',
+                                    title: {
+                                        text: 'All in one'
+                                    },
+
+                                    grid: {
+                                        x: {
+                                            show: true
+                                        },
+                                        
+                                        y: {
+                                            show: true,
+                                        }
+                                    },
+                                    legend: {
+                                        show: true
+                                    }
+                                });
+                            </script>
+            </div>
+        </div>
+
+
             {{#each generated_graph}}
                 {{#if isOpenRow }}
                     <hr>
@@ -30,7 +96,7 @@
                                         columns: [
                                             {{{ data }}}      
                                         ],
-                                        //labels: true
+                                        labels: true
                                     },
                                      zoom: {
                                         enabled: {
@@ -88,7 +154,7 @@
                                     <th scope="col">Menor</th>
                                     <th scope="col">Media</th>
                                     <th scope="col">Maior</th>
-                                    <th scope="col">Análise</th>
+                                    <th scope="col">Análise<br/>(X-1) -> X</th>
                                 </tr>
                             </thead>
                             <tbody>
