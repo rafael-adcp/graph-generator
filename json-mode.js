@@ -11,6 +11,23 @@ function getPercentual(value, totalAmount) {
     );
 }
 
+function generateOutput(templateFileName, data, fileName) {
+    // set up your handlebars template
+    var sourceTemplateAnalise = fs.readFileSync(templateFileName).toString();
+
+    // compile the template
+    var template = handlebars.compile(sourceTemplateAnalise);
+
+
+    fs.writeFileSync(
+        `output_${fileName}_${uuidv1()}.html`,
+        // call template as a function, passing in your data as the context
+        template(
+            data
+        )
+    );
+}
+
 const metrics = {
     total: 0,
     subiu: {
@@ -74,10 +91,10 @@ const jsonSheet = XLSX.utils.sheet_to_json(sheet);
 const categorias = [];
 
 const handlebarData = {
-    generated_graph: []
+    generated_graph: [],
+    generated_pie_graph: []
 };
 
-var i = 0;
 let firstRowAttributeName;
 let fetchColumns = true;
 for (var item of jsonSheet) {
@@ -119,12 +136,14 @@ for (var item of jsonSheet) {
     }
 
     handlebarData.generated_graph.push({
-        isOpenRow: i == 0 ? true : false,
         data: JSON.stringify(
             _.concat(["Value"], data)
         ),
         allInOnedata: JSON.stringify(
             _.concat([item[firstRowAttributeName]], data)
+        ),
+        pieData: JSON.stringify(
+            _.concat([item[firstRowAttributeName]], _.last(data))
         ),
         pureData: data,
         name: item[firstRowAttributeName],
@@ -135,29 +154,11 @@ for (var item of jsonSheet) {
         ),
         menor: _.min(data),
         monthYear: JSON.stringify(categorias),
-        isCloseRow: i == 2 ? true : false,
         icon: icon
     });
-
-    i++;
-    if (i === 3) {
-        i = 0;
-    }
 }
 
-// set up your handlebars template
-var source = fs.readFileSync('graficos.hb').toString();
-
-// compile the template
-var template = handlebars.compile(source);
 handlebarData.monthYear = JSON.stringify(categorias, null, 2);
-fs.writeFileSync(
-    `graph_parsed_from_${argv.fileName}_${uuidv1()}.html`,
-    // call template as a function, passing in your data as the context
-    template(
-        handlebarData
-    )
-);
 
 var print = ['subiu', 'caiu', 'manteve'];
 var analiseAtual = "Cenário atual:";
@@ -171,6 +172,7 @@ var tableContent = {
     data: []
 };
 
+//generating data for "analises.hb" template
 for (var item of handlebarData.generated_graph) {
     if (item.pureData.length > 1) { //meaning there is something to compare
 
@@ -217,6 +219,31 @@ for (var item of handlebarData.generated_graph) {
     }
 }
 
+//generating data for the pie graphs
+
+const pieData = {};
+
+for (var item of handlebarData.generated_graph) {
+    i = 0;
+    for (var data of item.pureData) {
+        if (!pieData[categorias[i]]) {
+            pieData[categorias[i]] = []
+        }
+        pieData[categorias[i]].push(
+            [`${item.name}`, data]
+        )
+        i++;
+    }
+}
+
+for (var item in pieData) {
+    handlebarData.generated_pie_graph.push({
+        uuid: "graphic_" + uuidv1().replace(/\-/g, '_'),
+        name: item,
+        data: JSON.stringify(pieData[item])
+    })
+}
+
 
 tableContent.totalAnalises = [];
 
@@ -240,19 +267,5 @@ tableContent.data = _.reverse( //becuse we want thing to be ordered DESC instead
     })
 )
 
-
-
-// set up your handlebars template
-var sourceTemplateAnalise = fs.readFileSync('analise.hb').toString();
-
-// compile the template
-var templateAnalise = handlebars.compile(sourceTemplateAnalise);
-
-
-fs.writeFileSync(
-    `analise_from_${argv.fileName}_${uuidv1()}.html`,
-    // call template as a function, passing in your data as the context
-    templateAnalise(
-        tableContent
-    )
-);
+generateOutput('graficos.hb', handlebarData, 'graficos');
+generateOutput('analise.hb', tableContent, 'analise');

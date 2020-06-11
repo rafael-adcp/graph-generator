@@ -82,12 +82,135 @@
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-md-12">
+             <div id="current-pie"></div>
+                            <script>
+                                var chart = bb.generate({
+                                    
+                                    data: {
+                                        type: "pie",
+                                        columns: [
+                                             {{#each generated_graph}}
+                                            {{{ pieData }}},
+                                            {{/each}}
+                                        ],
+                                        labels: true
+                                    },
+                                    "tooltip": {
+                                        "order": "desc"
+                                    },
+                                     zoom: {
+                                        enabled: {
+                                            type: "drag"
+                                        }
+                                    },
+                                    
+                                    axis : {
+                                        
+                                        x: {
+                                            label: {
+                                                text: 'date',
+                                            },
+                                            type: "category",
+                                            categories: {{{ monthYear }}} ,
+                                            tick: {
+                                                    fit: false, //makes x axis shows nicely,
+                                                },
+                                        },
+                                         y: {
+                                             label: {
+                                                text: 'value',
+                                            },
+                                        }
+                                    },
+                                
 
-            {{#each generated_graph}}
-                {{#if isOpenRow }}
-                    <hr>
+                                    bindto: '#current-pie',
+                                    title: {
+                                        text: 'Last entry % per category'
+                                    },
+
+                                    grid: {
+                                        x: {
+                                            show: true
+                                        },
+                                        
+                                        y: {
+                                            show: true,
+                                        }
+                                    },
+                                    legend: {
+                                        show: true
+                                    }
+                                });
+                            </script>
+            </div>
+        </div>
+        <hr>
                     <div class="row">
-                {{/if}}
+        {{#each generated_pie_graph}}
+                
+                        <div class="col-sm-4">
+                            <div id="{{uuid}}"></div>
+                            <script>
+                                var chart = bb.generate({
+                                    data: {
+                                        type: "pie",
+                                        columns: 
+                                            {{{ data }}}      
+                                        ,
+                                        labels: true
+                                    },
+                                     zoom: {
+                                        enabled: {
+                                            type: "drag"
+                                        }
+                                    },
+                                    
+                                    axis : {
+                                        
+                                        x: {
+                                            label: {
+                                                text: 'date',
+                                            },
+                                            type: "category",
+                                            tick: {
+                                                    fit: false, //makes x axis shows nicely,
+                                                },
+                                        },
+                                         y: {
+                                             label: {
+                                                text: 'value',
+                                            }
+                                        }
+                                    },
+                                
+
+                                    bindto: '#{{uuid}}',
+                                    title: {
+                                        text: '{{name}}'
+                                    },
+
+                                    legend: {
+                                        show: false
+                                    }
+                                });
+                            </script>
+                        </div>
+                        
+                
+            {{/each}}
+            </div>
+
+
+
+
+
+            <hr>
+            <div class="row">
+            {{#each generated_graph}}
+                
                         <div class="col-sm-4">
                             <div id="{{id}}"></div>
                             <script>
@@ -167,11 +290,8 @@
                             </tbody>
                             </table>
                         </div>
-                        
-                {{#if isCloseRow }}
-                    </div>
-                {{/if}}
             {{/each}}
+            </div>
         </div>
     </body>
 </html>
