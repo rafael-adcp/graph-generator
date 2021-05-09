@@ -7,7 +7,7 @@
     "billboard.js": "1.6.2",
     "bootstrap": "^4.4.1",
     "d3": "5.7.0",
-    "handlebars": "^4.5.3",
+    "handlebars": "^4.7.7",
     "lodash": "^4.17.19",
     "uuid": "^3.3.3",
     "xlsx": "^0.15.3",
